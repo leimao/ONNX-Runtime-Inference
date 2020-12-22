@@ -4,6 +4,12 @@
 
 ONNX Runtime C++ inference example for image classification using CPU and CUDA.
 
+## Dependencies
+
+* CMake 3.16.8
+* ONNX Runtime 1.6.0
+* OpenCV 4.5.0
+
 ## Usages
 
 ### Build Docker Image
@@ -57,4 +63,4 @@ Uncalibrated Confidence: 0.996137
 Minimum Latency: 1.03[ms]
 ```
 
-### References
+## References
