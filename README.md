@@ -28,7 +28,7 @@ $ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.6.0
 
 ```bash
 $ cmake -B build
-$ cmake --build build --config Release --parallel 8
+$ cmake --build build --config Release --parallel
 ```
 
 ### Run Example

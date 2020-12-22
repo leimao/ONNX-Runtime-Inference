@@ -10,13 +10,13 @@
 
 #include <chrono>
 #include <cmath>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <numeric>
 #include <string>
 #include <vector>
-#include <exception>
 
 template <typename T>
 T vectorProduct(const std::vector<T>& v)
@@ -182,7 +182,8 @@ int main(int argc, char* argv[])
     {
         // Using CUDA backend
         // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/providers/cuda/cuda_provider_factory.h#L13
-        OrtStatus* status = OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
+        OrtStatus* status =
+            OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
     }
 
     // Sets graph optimization level
