@@ -81,33 +81,6 @@ RUN cd /tmp && \
     mkdir -p build && cd build && \
     cmake -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib-${OPENCV_VERSION}/modules \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr \
-        -DBUILD_PNG=OFF \
-        -DBUILD_TIFF=OFF \
-        -DBUILD_TBB=OFF \
-        -DBUILD_JPEG=OFF \
-        -DBUILD_JASPER=OFF \
-        -DBUILD_ZLIB=OFF \
-        -DBUILD_EXAMPLES=ON \
-        -DBUILD_JAVA=OFF \
-        -DBUILD_opencv_python2=OFF \
-        -DBUILD_opencv_python3=ON \
-        -DWITH_OPENCL=OFF \
-        -DWITH_OPENMP=OFF \
-        -DWITH_FFMPEG=ON \
-        -DWITH_GSTREAMER=OFF \
-        -DWITH_GSTREAMER_0_10=OFF \
-        -DWITH_CUDA=ON \
-        -DWITH_GTK=ON \
-        -DWITH_VTK=OFF \
-        -DWITH_TBB=ON \
-        -DWITH_1394=OFF \
-        -DWITH_OPENEXR=OFF \
-        -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
-        -DCUDA_ARCH_BIN='3.0 3.5 5.0 6.0 6.2 7.0 7.5' \
-        -DCUDA_ARCH_PTX="" \
-        -DINSTALL_C_EXAMPLES=ON \
-        -DINSTALL_TESTS=OFF \
         -DOPENCV_TEST_DATA_PATH=../opencv_extra-${OPENCV_VERSION}/testdata \
         ../opencv-${OPENCV_VERSION} && \
     cmake --build . --parallel ${NUM_JOBS} && \
@@ -120,11 +93,6 @@ RUN cd /tmp && \
     git clone --recursive --branch v${ONNXRUNTIME_VERSION} https://github.com/Microsoft/onnxruntime && \
     cd onnxruntime && \
     ./build.sh \
-        --cuda_home /usr/local/cuda \
-        --cudnn_home /usr/lib/x86_64-linux-gnu/ \
-        --use_cuda \
-        # --use_tensorrt \
-        # --tensorrt_home /usr/lib/x86_64-linux-gnu/ \
         --config RelWithDebInfo \
         --build_shared_lib \
         --build_wheel \
