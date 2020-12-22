@@ -1,6 +1,7 @@
 
 // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/csharp/test/Microsoft.ML.OnnxRuntime.EndToEndTests.Capi/CXX_Api_Sample.cpp
 // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_cxx_api.h
+#include <cuda_provider_factory.h>
 #include <onnxruntime_cxx_api.h>
 
 #include <opencv2/dnn/dnn.hpp>
@@ -15,6 +16,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include <exception>
 
 template <typename T>
 T vectorProduct(const std::vector<T>& v)
@@ -130,6 +132,39 @@ std::vector<std::string> readLabels(std::string& labelFilepath)
 
 int main(int argc, char* argv[])
 {
+    bool useCUDA{true};
+    const char* useCUDAFlag = "--use_cuda";
+    const char* useCPUFlag = "--use_cpu";
+    if (argc == 1)
+    {
+        useCUDA = false;
+    }
+    else if ((argc == 2) && (strcmp(argv[1], useCUDAFlag) == 0))
+    {
+        useCUDA = true;
+    }
+    else if ((argc == 2) && (strcmp(argv[1], useCPUFlag) == 0))
+    {
+        useCUDA = false;
+    }
+    else if ((argc == 2) && (strcmp(argv[1], useCUDAFlag) != 0))
+    {
+        useCUDA = false;
+    }
+    else
+    {
+        throw std::runtime_error{"Too many arguments."};
+    }
+
+    if (useCUDA)
+    {
+        std::cout << "Inference Execution Provider: CUDA" << std::endl;
+    }
+    else
+    {
+        std::cout << "Inference Execution Provider: CPU" << std::endl;
+    }
+
     std::string instanceName{"image-classification-inference"};
     std::string modelFilepath{"../../data/models/squeezenet1.1-7.onnx"};
     std::string imageFilepath{
@@ -143,6 +178,12 @@ int main(int argc, char* argv[])
                  instanceName.c_str());
     Ort::SessionOptions sessionOptions;
     sessionOptions.SetIntraOpNumThreads(1);
+    if (useCUDA)
+    {
+        // Using CUDA backend
+        // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/providers/cuda/cuda_provider_factory.h#L13
+        OrtStatus* status = OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
+    }
 
     // Sets graph optimization level
     // Available levels are
@@ -161,30 +202,32 @@ int main(int argc, char* argv[])
     size_t numInputNodes = session.GetInputCount();
     size_t numOutputNodes = session.GetOutputCount();
 
-    std::cout << "Number of input nodes: " << numInputNodes << std::endl;
-    std::cout << "Number of output nodes: " << numOutputNodes << std::endl;
+    std::cout << "Number of Input Nodes: " << numInputNodes << std::endl;
+    std::cout << "Number of Output Nodes: " << numOutputNodes << std::endl;
 
     const char* inputName = session.GetInputName(0, allocator);
+    std::cout << "Input Name: " << inputName << std::endl;
 
     Ort::TypeInfo inputTypeInfo = session.GetInputTypeInfo(0);
     auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
 
     ONNXTensorElementDataType inputType = inputTensorInfo.GetElementType();
-    std::cout << inputType << std::endl;
+    std::cout << "Input Type: " << inputType << std::endl;
 
     std::vector<int64_t> inputDims = inputTensorInfo.GetShape();
-    std::cout << inputDims << std::endl;
+    std::cout << "Input Dimensions: " << inputDims << std::endl;
 
     const char* outputName = session.GetOutputName(0, allocator);
+    std::cout << "Output Name: " << outputName << std::endl;
 
     Ort::TypeInfo outputTypeInfo = session.GetOutputTypeInfo(0);
     auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
 
     ONNXTensorElementDataType outputType = outputTensorInfo.GetElementType();
-    std::cout << outputType << std::endl;
+    std::cout << "Output Type: " << outputType << std::endl;
 
     std::vector<int64_t> outputDims = outputTensorInfo.GetShape();
-    std::cout << outputDims << std::endl;
+    std::cout << "Output Dimensions: " << outputDims << std::endl;
 
     cv::Mat imageBGR = cv::imread(imageFilepath, cv::ImreadModes::IMREAD_COLOR);
     cv::Mat resizedImageBGR, resizedImageRGB, resizedImage, preprocessedImage;
@@ -267,10 +310,10 @@ int main(int argc, char* argv[])
     }
     std::chrono::steady_clock::time_point end =
         std::chrono::steady_clock::now();
-    std::cout << "Minimum Latency: "
+    std::cout << "Minimum Inference Latency: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end -
                                                                        begin)
                          .count() /
                      static_cast<float>(numTests)
-              << "[ms]" << std::endl;
+              << " ms" << std::endl;
 }

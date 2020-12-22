@@ -35,32 +35,38 @@ $ cmake --build build --config Release --parallel 8
 
 ```bash
 $ cd build/src/
-$ ./inference_cpu 
-Number of input nodes: 1
-Number of output nodes: 1
-float
-[1, 3, 224, 224]
-float
-[1, 1000]
+$ ./inference  --use_cpu
+Inference Execution Provider: CPU
+Number of Input Nodes: 1
+Number of Output Nodes: 1
+Input Name: data
+Input Type: float
+Input Dimensions: [1, 3, 224, 224]
+Output Name: squeezenet0_flatten0_reshape0
+Output Type: float
+Output Dimensions: [1, 1000]
 Predicted Label ID: 92
 Predicted Label: n01828970 bee eater
 Uncalibrated Confidence: 0.996137
-Minimum Latency: 7.51[ms]
+Minimum Inference Latency: 7.45 ms
 ```
 
 ```bash
 $ cd build/src/
-$ ./inference_cuda 
-Number of input nodes: 1
-Number of output nodes: 1
-float
-[1, 3, 224, 224]
-float
-[1, 1000]
+$ ./inference  --use_cuda
+Inference Execution Provider: CUDA
+Number of Input Nodes: 1
+Number of Output Nodes: 1
+Input Name: data
+Input Type: float
+Input Dimensions: [1, 3, 224, 224]
+Output Name: squeezenet0_flatten0_reshape0
+Output Type: float
+Output Dimensions: [1, 1000]
 Predicted Label ID: 92
 Predicted Label: n01828970 bee eater
 Uncalibrated Confidence: 0.996137
-Minimum Latency: 1.03[ms]
+Minimum Inference Latency: 0.98 ms
 ```
 
 ## References
