@@ -70,3 +70,5 @@ Minimum Inference Latency: 0.98 ms
 ```
 
 ## References
+
+* [ONNX Runtime C++ Inference](https://leimao.github.io/blog/ONNX-Runtime-CPP-Inference/)
