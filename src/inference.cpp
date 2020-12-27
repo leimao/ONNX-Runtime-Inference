@@ -64,29 +64,9 @@ int main(int argc, char* argv[])
     std::vector<std::string> labels{readLabels(labelFilepath)};
 
     // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_c_api.h#L123
-    Ort::Env env(OrtLoggingLevel::ORT_LOGGING_LEVEL_WARNING,
-                 instanceName.c_str());
-    Ort::SessionOptions sessionOptions;
-    sessionOptions.SetIntraOpNumThreads(1);
-    if (useCUDA)
-    {
-        // Using CUDA backend
-        // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/providers/cuda/cuda_provider_factory.h#L13
-        OrtStatus* status =
-            OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
-    }
+    Ort::Env env{OrtLoggingLevel::ORT_LOGGING_LEVEL_WARNING, instanceName.c_str()};
 
-    // Sets graph optimization level
-    // Available levels are
-    // ORT_DISABLE_ALL -> To disable all optimizations
-    // ORT_ENABLE_BASIC -> To enable basic optimizations (Such as redundant node
-    // removals) ORT_ENABLE_EXTENDED -> To enable extended optimizations
-    // (Includes level 1 + more complex optimizations like node fusions)
-    // ORT_ENABLE_ALL -> To Enable All possible optimizations
-    sessionOptions.SetGraphOptimizationLevel(
-        GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-
-    Ort::Session session(env, modelFilepath.c_str(), sessionOptions);
+    Ort::Session session = createInferenceSession(env, modelFilepath, useCUDA);
 
     Ort::AllocatorWithDefaultOptions allocator;
 
@@ -138,14 +118,8 @@ int main(int argc, char* argv[])
     std::vector<Ort::Value> inputTensors;
     std::vector<Ort::Value> outputTensors;
 
-    Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(
-        OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault);
-    inputTensors.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo, inputTensorValues.data(), inputTensorSize, inputDims.data(),
-        inputDims.size()));
-    outputTensors.push_back(Ort::Value::CreateTensor<float>(
-        memoryInfo, outputTensorValues.data(), outputTensorSize,
-        outputDims.data(), outputDims.size()));
+    inputTensors.push_back(createIOTensors(inputTensorValues, inputDims));
+    outputTensors.push_back(createIOTensors(outputTensorValues, outputDims));
 
     // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_cxx_api.h#L353
     session.Run(Ort::RunOptions{nullptr}, inputNames.data(),
@@ -153,40 +127,15 @@ int main(int argc, char* argv[])
                 outputTensors.data(), 1);
 
     int predId = 0;
-    float activation = 0;
-    float maxActivation = std::numeric_limits<float>::lowest();
-    float expSum = 0;
-    for (int i = 0; i < labels.size(); i++)
-    {
-        activation = outputTensorValues.at(i);
-        expSum += std::exp(activation);
-        if (activation > maxActivation)
-        {
-            predId = i;
-            maxActivation = activation;
-        }
-    }
+    float confidence = 0;
+    getPrediction(outputTensorValues, predId, confidence);
+
     std::cout << "Predicted Label ID: " << predId << std::endl;
     std::cout << "Predicted Label: " << labels.at(predId) << std::endl;
-    std::cout << "Uncalibrated Confidence: " << std::exp(maxActivation) / expSum
-              << std::endl;
+    std::cout << "Uncalibrated Confidence: " << confidence << std::endl;
 
     // Measure latency
     int numTests{100};
-    std::chrono::steady_clock::time_point begin =
-        std::chrono::steady_clock::now();
-    for (int i = 0; i < numTests; i++)
-    {
-        session.Run(Ort::RunOptions{nullptr}, inputNames.data(),
-                    inputTensors.data(), 1, outputNames.data(),
-                    outputTensors.data(), 1);
-    }
-    std::chrono::steady_clock::time_point end =
-        std::chrono::steady_clock::now();
-    std::cout << "Minimum Inference Latency: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end -
-                                                                       begin)
-                         .count() /
-                     static_cast<float>(numTests)
-              << " ms" << std::endl;
+    float latency = measureInferenceLatency(session, inputNames, inputTensors, outputNames, outputTensors, numTests);
+    std::cout << "Minimum Inference Latency: " << latency << " ms" << std::endl;
 }
