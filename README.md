@@ -27,7 +27,9 @@ $ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.6.0
 Debug mode
 
 ```bash
-$ docker run -it --rm --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.6.0
+$ xhost +
+$ docker run -it --rm --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --gpus device=0 -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/mnt onnxruntime-cuda:1.6.0
+$ xhost -
 ```
 
 ### Build Example

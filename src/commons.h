@@ -3,6 +3,10 @@
 #include <fstream>
 #include <numeric>
 #include <vector>
+#include <stdexcept>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 
 /**
  * @brief Compute the product of a numeric vector.
@@ -120,6 +124,10 @@ std::vector<std::string> readLabels(const std::string& labelFilepath)
     std::vector<std::string> labels;
     std::string line;
     std::ifstream fp(labelFilepath);
+    if (!fp.is_open())
+    {
+        throw std::runtime_error{"Label file was not found."};
+    }
     while (std::getline(fp, line))
     {
         labels.push_back(line);
@@ -232,3 +240,195 @@ Ort::Session createInferenceSession(Ort::Env& env, const std::string& modelFilep
 
     return session;
 }
+
+/**
+ * @brief A thread-safe fixed-size queue with a throughput counter.
+ * This might be useful for some memory-constrained platforms.
+ * https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
+ * @tparam T 
+ */
+// It is unnecessary to inherit.
+// template <typename T>
+// class FixedQueue : public std::queue<T>
+// {
+// public:
+
+//     FixedQueue() : mCounter{0}, mMaxSize{0} {}
+//     FixedQueue(size_t maxSize) : mMaxSize{maxSize} {}
+
+//     void push(const T& value)
+//     {
+//         std::lock_guard<std::mutex> lock(this->mMutex);
+//         // Remove the first element if the queue reaches maximum size.
+//         if ((this->mMaxSize > 0) && (std::queue<T>::size() == this->mMaxSize))
+//         {
+//             std::queue<T>::pop();
+//         }
+//         std::queue<T>::push(value);
+//         this->mCounter += 1;
+//         if (this->mCounter == 1)
+//         {
+//             this->mTickMeter.reset();
+//             // We start counting from the second frame.
+//             this->mTickMeter.start();
+//         }
+//         this->mCV.notify_one();
+//     }
+
+//     void enqueue(const T& value)
+//     {
+//         this->push();
+//     }
+
+//     bool empty() const
+//     {
+//         std::lock_guard<std::mutex> lock(this->mMutex);
+//         bool isEmpty = std::queue<T>::empty();
+//         return isEmpty;
+//     }
+
+//     void pop()
+//     {
+//         std::lock_guard<std::mutex> lock(this->mMutex);
+//         std::queue<T>::pop();
+//     }
+
+//     T& front()
+//     {
+//         std::lock_guard<std::mutex> lock(this->mMutex);
+//         T& value = std::queue<T>::front();
+//         return value;
+//     }
+
+//     T dequeue()
+//     {
+//         // We use std::unique_lock instead of std::lock_guard here 
+//         // because we will release the lock temporarily later if the queue is empty.
+//         std::unique_lock<std::mutex> lock(this->mMutex);
+//         // https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+//         this->mCV.wait(lock, std::queue<T>::empty);
+        
+//         T value = std::queue<T>::front();
+//         std::queue<T>::pop();
+
+//         return value;
+//     }
+
+//     float getFPS()
+//     {
+//         this->mTickMeter.stop();
+//         float fps = static_cast<float>(this->mCounter) / this->mTickMeter.getTimeSec();
+//         this->mTickMeter.start();
+//         return fps;
+//     }
+
+//     void clear()
+//     {
+//         std::lock_guard<std::mutex> lock(this->mMutex);
+//         while (!std::queue<T>::empty())
+//         {
+//             std::queue<T>::pop();
+//         }
+//     }
+    
+// private:
+
+//     cv::TickMeter mTickMeter;
+//     std::mutex mMutex;
+//     // If mMaxSize <= 0
+//     // FixedQueue object does not have size limit.
+//     size_t mMaxSize;
+//     unsigned int mCounter;
+//     std::condition_variable mCV;
+
+// };
+
+/**
+ * @brief A thread-safe fixed-size queue with a throughput counter.
+ * This might be useful for some memory-constrained platforms.
+ * https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
+ * @tparam T 
+ */
+template <typename T>
+class FixedQueue
+{
+public:
+
+    FixedQueue() : mCounter{0}, mMaxSize{0} {}
+    FixedQueue(size_t maxSize) : mMaxSize{maxSize} {}
+
+    /**
+     * @brief Insert a value to the FixedQueue object in a thread safe way.
+     * @param value 
+     */
+    void enqueue(const T& value)
+    {
+        std::lock_guard<std::mutex> lock(this->mMutex);
+        // Remove the first element if the queue reaches maximum size.
+        if ((this->mMaxSize > 0) && (this->mQueue.size() == this->mMaxSize))
+        {
+            this->mQueue.pop();
+        }
+        this->mQueue.push(value);
+        this->mCounter += 1;
+        if (this->mCounter == 1)
+        {
+            this->mTickMeter.reset();
+            // We start counting from the second frame.
+            this->mTickMeter.start();
+        }
+        this->mCV.notify_one();
+    }
+
+    /**
+     * @brief Retrieve a value from the FixedQueue object in a thread safe way.
+     * @param value 
+     */
+    T dequeue()
+    {
+        // We use std::unique_lock instead of std::lock_guard here 
+        // because we will release the lock temporarily later if the queue is empty.
+        std::unique_lock<std::mutex> lock(this->mMutex);
+        // https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+        this->mCV.wait(lock, this->mQueue.empty);
+        
+        T value = this->mQueue.front();
+        this->mQueue.pop();
+
+        return value;
+    }
+
+    /**
+     * @brief Get the throughput of the FixedQueue object.
+     * @return float 
+     */
+    float getThroughput()
+    {
+        this->mTickMeter.stop();
+        float throughput = static_cast<float>(this->mCounter - 1) / this->mTickMeter.getTimeSec();
+        this->mTickMeter.start();
+        return throughput;
+    }
+
+    /**
+     * @brief Clear the FixedQueue object.
+     */
+    void clear()
+    {
+        std::lock_guard<std::mutex> lock(this->mMutex);
+        this->mQueue = std::queue<T>();
+        this->mCounter = 0;
+    }
+    
+private:
+
+    std::queue<T> mQueue;
+    cv::TickMeter mTickMeter;
+    std::mutex mMutex;
+    // If mMaxSize <= 0
+    // FixedQueue object does not have size limit.
+    size_t mMaxSize;
+    unsigned int mCounter;
+    std::condition_variable mCV;
+};
+
