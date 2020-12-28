@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 find_package(Threads REQUIRED)
 
+
 add_executable(inference inference.cpp commons.h)
 target_include_directories(inference PRIVATE ${ONNX_RUNTIME_SESSION_INCLUDE_DIRS} ${ONNX_RUNTIME_PROVIDERS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(inference PRIVATE ${ONNX_RUNTIME_LIB} ${OpenCV_LIBRARIES})
@@ -16,4 +17,4 @@ target_link_libraries(inference_camera PRIVATE ${ONNX_RUNTIME_LIB} ${OpenCV_LIBR
 
 add_executable(camera_fps camera_fps.cpp)
 target_include_directories(camera_fps PRIVATE ${ONNX_RUNTIME_SESSION_INCLUDE_DIRS} ${ONNX_RUNTIME_PROVIDERS_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(camera_fps PRIVATE ${ONNX_RUNTIME_LIB} ${OpenCV_LIBRARIES} Threads::Threads)
+target_link_libraries(camera_fps PRIVATE ${ONNX_RUNTIME_LIB} ${OpenCV_LIBRARIES} Threads::Threads swscale avformat avcodec avutil)

@@ -1,6 +1,7 @@
 
 #include "opencv2/opencv.hpp"
 #include <opencv2/videoio.hpp>
+#include <opencv2/videoio/registry.hpp>
 #include <time.h>
 
 using namespace cv;
@@ -8,13 +9,19 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+    std::vector<VideoCaptureAPIs> backends = cv::videoio_registry::getBackends();
+    for (auto& backend : backends)
+    {
+        std::cout << backend << "," << cv::videoio_registry::hasBackend(backend) << "," << cv::videoio_registry::getBackendName(backend) << std::endl;
+    }	
+
 
     // Start default camera
-    VideoCapture video(0);
+    VideoCapture video;
 
     int deviceID = 0;             // 0 = open default camera
-    int apiID = cv::CAP_ANY;      // 0 = autodetect default API
-    // int apiID = cv::CAP_DSHOW;
+    // int apiID = cv::CAP_ANY;      // 0 = autodetect default API
+    int apiID = cv::CAP_FFMPEG;
     // open selected camera using selected API
     video.open(deviceID, apiID);
     if (!video.isOpened()) {
