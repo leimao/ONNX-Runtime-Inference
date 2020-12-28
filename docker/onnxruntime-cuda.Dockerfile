@@ -73,7 +73,7 @@ RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev
 RUN apt-get install -y libgtk-3-dev 
 RUN apt-get install -y libpng-dev libopenexr-dev libtiff-dev libwebp-dev libdc1394-22-dev
 RUN apt-get install -y libv4l-dev
-RUN apt-get install -y install ffmpeg
+RUN apt-get install -y ffmpeg
 
 RUN cd /tmp && \
     wget -O opencv.zip https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip && \
@@ -110,8 +110,8 @@ RUN cd /tmp && \
         -DWITH_1394=ON \
         -DWITH_OPENEXR=OFF \
         -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
-        -DCUDA_ARCH_BIN='3.0 3.5 5.0 6.0 6.2 7.0 7.5' \
-        -DCUDA_ARCH_PTX="" \
+        -DCUDA_ARCH_BIN="3.0 3.5 5.0 6.0 6.2 7.0 7.5" \
+        -DCUDA_ARCH_PTX="7.5" \
         -DINSTALL_C_EXAMPLES=ON \
         -DINSTALL_TESTS=OFF \
         -DOPENCV_TEST_DATA_PATH=../opencv_extra-${OPENCV_VERSION}/testdata \
