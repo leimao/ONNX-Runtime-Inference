@@ -15,20 +15,20 @@ ONNX Runtime C++ inference example for image classification using CPU and CUDA.
 ### Build Docker Image
 
 ```bash
-$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag=onnxruntime-cuda:1.6.0 .
+$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag=onnxruntime-cuda:0.0.1 .
 ```
 
 ### Run Docker Container
 
 ```bash
-$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.6.0
+$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:0.0.1
 ```
 
 Debug mode
 
 ```bash
 $ xhost +
-$ docker run -it --rm --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --gpus device=0 -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/mnt onnxruntime-cuda:1.6.0
+$ docker run -it --rm --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --gpus device=0 --device /dev/video0 -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/mnt onnxruntime-cuda:0.0.1
 $ xhost -
 ```
 

@@ -1,8 +1,9 @@
 FROM nvcr.io/nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
 # FROM nvcr.io/nvidia/tensorrt:20.09-py3
 
-ARG OPENCV_VERSION=4.5.0
+ARG OPENCV_VERSION=4.5.1
 ARG ONNXRUNTIME_VERSION=1.6.0
+ARG CMAKE_VERSION=3.19.2
 ARG NUM_JOBS=12
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -43,8 +44,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxrender-dev \
         cmake \
         unzip \
+        libcanberra-gtk-module \
+        libcanberra-gtk3-module \
         sudo
-RUN apt-get clean
 
 RUN cd /usr/local/bin && \
     ln -s /usr/bin/python3 python && \
@@ -59,17 +61,19 @@ ENV LANGUAGE en_US.UTF-8
 
 # Install CMake
 RUN cd /tmp && \
-    wget https://github.com/Kitware/CMake/releases/download/v3.16.8/cmake-3.16.8-Linux-x86_64.sh && \
-    chmod +x cmake-3.16.8-Linux-x86_64.sh && \
-    ./cmake-3.16.8-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
-RUN rm -rf /tmp/*
+    wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.sh && \
+    chmod +x cmake-${CMAKE_VERSION}-Linux-x86_64.sh && \
+    ./cmake-${CMAKE_VERSION}-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
+# RUN rm -rf /tmp/*
 
 # Install OpenCV
 # OpenCV-Python dependencies
-RUN apt-get update && apt-get install -y libavcodec-dev libavformat-dev libswscale-dev
-RUN apt-get update && apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev
-RUN apt-get update && apt-get install -y libgtk-3-dev 
-RUN apt-get update && apt-get install -y libpng-dev libopenexr-dev libtiff-dev libwebp-dev
+RUN apt-get install -y libavcodec-dev libavformat-dev libswscale-dev
+RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev
+RUN apt-get install -y libgtk-3-dev 
+RUN apt-get install -y libpng-dev libopenexr-dev libtiff-dev libwebp-dev libdc1394-22-dev
+RUN apt-get install -y libv4l-dev
+RUN apt-get install -y install ffmpeg
 
 RUN cd /tmp && \
     wget -O opencv.zip https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip && \
@@ -95,13 +99,15 @@ RUN cd /tmp && \
         -DWITH_OPENCL=OFF \
         -DWITH_OPENMP=OFF \
         -DWITH_FFMPEG=ON \
-        -DWITH_GSTREAMER=OFF \
-        -DWITH_GSTREAMER_0_10=OFF \
+        -DWITH_GSTREAMER=ON \
+        -DVIDEOIO_PLUGIN_LIST=gstreamer \
+        -DWITH_GSTREAMER_0_10=ON \
         -DWITH_CUDA=ON \
         -DWITH_GTK=ON \
         -DWITH_VTK=OFF \
         -DWITH_TBB=ON \
-        -DWITH_1394=OFF \
+        -DWITH_V4L=ON \
+        -DWITH_1394=ON \
         -DWITH_OPENEXR=OFF \
         -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
         -DCUDA_ARCH_BIN='3.0 3.5 5.0 6.0 6.2 7.0 7.5' \
@@ -112,7 +118,7 @@ RUN cd /tmp && \
         ../opencv-${OPENCV_VERSION} && \
     cmake --build . --parallel ${NUM_JOBS} && \
     make install
-RUN rm -rf /tmp/*
+# RUN rm -rf /tmp/*
 
 # Install ONNX Runtime
 RUN pip install pytest==6.2.1 onnx==1.8.0
@@ -133,5 +139,5 @@ RUN cd /tmp && \
     cd build/Linux/RelWithDebInfo && \
     make install && \
     pip install dist/*
-RUN rm -rf /tmp/*
+# RUN rm -rf /tmp/*
 

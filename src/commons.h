@@ -354,8 +354,8 @@ class FixedQueue
 {
 public:
 
-    FixedQueue() : mCounter{0}, mMaxSize{0} {}
-    FixedQueue(size_t maxSize) : mMaxSize{maxSize} {}
+    FixedQueue() : mCounter{0}, mWarmUp{1}, mMaxSize{0} {}
+    FixedQueue(size_t maxSize) : mCounter{0}, mWarmUp{1}, mMaxSize{maxSize} {}
 
     /**
      * @brief Insert a value to the FixedQueue object in a thread safe way.
@@ -371,7 +371,7 @@ public:
         }
         this->mQueue.push(value);
         this->mCounter += 1;
-        if (this->mCounter == 1)
+        if (this->mCounter == this->mWarmUp)
         {
             this->mTickMeter.reset();
             // We start counting from the second frame.
@@ -390,8 +390,11 @@ public:
         // because we will release the lock temporarily later if the queue is empty.
         std::unique_lock<std::mutex> lock(this->mMutex);
         // https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-        this->mCV.wait(lock, this->mQueue.empty);
-        
+        while(this->mQueue.empty())
+        {
+            this->mCV.wait(lock);
+        }
+
         T value = this->mQueue.front();
         this->mQueue.pop();
 
@@ -405,9 +408,21 @@ public:
     float getThroughput()
     {
         this->mTickMeter.stop();
-        float throughput = static_cast<float>(this->mCounter - 1) / this->mTickMeter.getTimeSec();
+        long numValidCounts = this->mCounter - this->mWarmUp;
+        float throughput = 0;
+        if (numValidCounts > 0)
+        {
+            throughput = numValidCounts / this->mTickMeter.getTimeSec();
+        }
+        std::cout << this->mCounter << ", " << this->mTickMeter.getTimeSec() << std::endl;
         this->mTickMeter.start();
         return throughput;
+        // this->mTickMeter.stop();
+        // double fps = (this->mCounter - this->mWarmUp) / this->mTickMeter.getTimeSec();
+        
+        // std::cout << this->mCounter << ", " << this->mTickMeter.getTimeSec() << std::endl;
+        // this->mTickMeter.start();
+        // return static_cast<float>(fps);
     }
 
     /**
@@ -428,7 +443,8 @@ private:
     // If mMaxSize <= 0
     // FixedQueue object does not have size limit.
     size_t mMaxSize;
-    unsigned int mCounter;
+    long mCounter;
+    int mWarmUp;
     std::condition_variable mCV;
 };
 
