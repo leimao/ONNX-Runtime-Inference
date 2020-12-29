@@ -70,11 +70,11 @@ int main(int argc, char* argv[])
     std::thread framesThread{readFrames, std::ref(cap), std::ref(framesQueue)};
 
     // Postprocessing and rendering loop
-    while (waitKey(1) < 0)
+    while (cv::waitKey(1) < 0)
     {
         cv::Mat frame = framesQueue.dequeue();
         std::string label = format("Camera: %.2f FPS", framesQueue.getThroughput());
-        putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0));
+        cv::putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0));
         cv::imshow(windowName, frame);
     }
 

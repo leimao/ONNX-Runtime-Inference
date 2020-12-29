@@ -217,7 +217,13 @@ float measureInferenceLatency(Ort::Session& session, const std::vector<const cha
 Ort::Session createInferenceSession(Ort::Env& env, const std::string& modelFilepath, bool useCUDA)
 {
     Ort::SessionOptions sessionOptions;
+    // Session configurations
+    // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/docs/ONNX_Runtime_Perf_Tuning.md#default-cpu-execution-provider-mlas
+    // Use default settings
     sessionOptions.SetIntraOpNumThreads(1);
+    sessionOptions.SetInterOpNumThreads(1);
+    // ExecutionMode::ORT_PARALLEL or ExecutionMode::ORT_SEQUENTIAL
+    sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
     if (useCUDA)
     {
         // Using CUDA backend
@@ -345,6 +351,7 @@ Ort::Session createInferenceSession(Ort::Env& env, const std::string& modelFilep
 
 /**
  * @brief A thread-safe fixed-size queue with a throughput counter.
+ * This should be equivalent to a ring-queue or a ring-buffer.
  * This might be useful for some memory-constrained platforms.
  * https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
  * @tparam T 
