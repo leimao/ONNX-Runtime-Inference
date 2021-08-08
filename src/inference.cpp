@@ -1,7 +1,6 @@
 
-// https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/csharp/test/Microsoft.ML.OnnxRuntime.EndToEndTests.Capi/CXX_Api_Sample.cpp
-// https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_cxx_api.h
-#include <cuda_provider_factory.h>
+// https://github.com/microsoft/onnxruntime/blob/v1.8.2/csharp/test/Microsoft.ML.OnnxRuntime.EndToEndTests.Capi/CXX_Api_Sample.cpp
+// https://github.com/microsoft/onnxruntime/blob/v1.8.2/include/onnxruntime/core/session/onnxruntime_cxx_api.h
 #include <onnxruntime_cxx_api.h>
 
 #include <opencv2/dnn/dnn.hpp>
@@ -173,7 +172,6 @@ int main(int argc, char* argv[])
 
     std::vector<std::string> labels{readLabels(labelFilepath)};
 
-    // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_c_api.h#L123
     Ort::Env env(OrtLoggingLevel::ORT_LOGGING_LEVEL_WARNING,
                  instanceName.c_str());
     Ort::SessionOptions sessionOptions;
@@ -181,9 +179,9 @@ int main(int argc, char* argv[])
     if (useCUDA)
     {
         // Using CUDA backend
-        // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/providers/cuda/cuda_provider_factory.h#L13
-        OrtStatus* status =
-            OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
+        // https://github.com/microsoft/onnxruntime/blob/v1.8.2/include/onnxruntime/core/session/onnxruntime_cxx_api.h#L329
+        OrtCUDAProviderOptions cuda_options{0};
+        sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
     }
 
     // Sets graph optimization level
@@ -275,7 +273,6 @@ int main(int argc, char* argv[])
         memoryInfo, outputTensorValues.data(), outputTensorSize,
         outputDims.data(), outputDims.size()));
 
-    // https://github.com/microsoft/onnxruntime/blob/rel-1.6.0/include/onnxruntime/core/session/onnxruntime_cxx_api.h#L353
     session.Run(Ort::RunOptions{nullptr}, inputNames.data(),
                 inputTensors.data(), 1, outputNames.data(),
                 outputTensors.data(), 1);
