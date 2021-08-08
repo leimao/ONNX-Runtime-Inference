@@ -6,22 +6,22 @@ ONNX Runtime C++ inference example for image classification using CPU and CUDA.
 
 ## Dependencies
 
-* CMake 3.16.8
-* ONNX Runtime 1.6.0
-* OpenCV 4.5.0
+* CMake 3.20.1
+* ONNX Runtime 1.8.2
+* OpenCV 4.5.2
 
 ## Usages
 
 ### Build Docker Image
 
 ```bash
-$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag=onnxruntime-cuda:1.6.0 .
+$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag=onnxruntime-cuda:1.8.2 .
 ```
 
 ### Run Docker Container
 
 ```bash
-$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.6.0
+$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.8.2
 ```
 
 ### Build Example

@@ -1,9 +1,9 @@
-FROM nvcr.io/nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
-# FROM nvcr.io/nvidia/tensorrt:20.09-py3
+FROM nvcr.io/nvidia/cuda:11.4.1-cudnn8-devel-ubuntu20.04
 
-ARG OPENCV_VERSION=4.5.0
-ARG ONNXRUNTIME_VERSION=1.6.0
-ARG NUM_JOBS=12
+ARG OPENCV_VERSION=4.5.3
+ARG ONNXRUNTIME_VERSION=1.8.2
+ARG CMALE_VERSION=3.21.1
+ARG NUM_JOBS=8
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -42,8 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxext6 \
         libxrender-dev \
         cmake \
-        unzip \
-        sudo
+        unzip
 RUN apt-get clean
 
 RUN cd /usr/local/bin && \
@@ -59,9 +58,8 @@ ENV LANGUAGE en_US.UTF-8
 
 # Install CMake
 RUN cd /tmp && \
-    wget https://github.com/Kitware/CMake/releases/download/v3.16.8/cmake-3.16.8-Linux-x86_64.sh && \
-    chmod +x cmake-3.16.8-Linux-x86_64.sh && \
-    ./cmake-3.16.8-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
+    wget https://github.com/Kitware/CMake/releases/download/v${CMALE_VERSION}/cmake-${CMALE_VERSION}-linux-x86_64.sh && \
+    bash cmake-${CMALE_VERSION}-linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
 RUN rm -rf /tmp/*
 
 # Install OpenCV
@@ -104,7 +102,7 @@ RUN cd /tmp && \
         -DWITH_1394=OFF \
         -DWITH_OPENEXR=OFF \
         -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
-        -DCUDA_ARCH_BIN='3.0 3.5 5.0 6.0 6.2 7.0 7.5' \
+        -DCUDA_ARCH_BIN='6.0 6.2 7.0 7.5' \
         -DCUDA_ARCH_PTX="" \
         -DINSTALL_C_EXAMPLES=ON \
         -DINSTALL_TESTS=OFF \
@@ -115,7 +113,7 @@ RUN cd /tmp && \
 RUN rm -rf /tmp/*
 
 # Install ONNX Runtime
-RUN pip install pytest==6.2.1 onnx==1.8.0
+RUN pip install pytest==6.2.1 onnx==1.10.1
 RUN cd /tmp && \
     git clone --recursive --branch v${ONNXRUNTIME_VERSION} https://github.com/Microsoft/onnxruntime && \
     cd onnxruntime && \
