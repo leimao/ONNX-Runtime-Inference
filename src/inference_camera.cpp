@@ -63,18 +63,29 @@ int main(int argc, char* argv[])
         std::cerr << "ERROR! Unable to open camera" << std::endl;
         return -1;
     }
+    cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
     size_t framesQueueSize = 100;
     FixedQueue<cv::Mat> framesQueue{framesQueueSize};
 
     std::thread framesThread{readFrames, std::ref(cap), std::ref(framesQueue)};
 
+
+
+
+
+
+
+
+
+    
+
     // Postprocessing and rendering loop
     while (cv::waitKey(1) < 0)
     {
         cv::Mat frame = framesQueue.dequeue();
-        std::string label = format("Camera: %.2f FPS", framesQueue.getThroughput());
-        cv::putText(frame, label, Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0));
+        std::string label = cv::format("Camera: %.2f FPS", framesQueue.getThroughput());
+        cv::putText(frame, label, cv::Point(0, 15), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0));
         cv::imshow(windowName, frame);
     }
 
