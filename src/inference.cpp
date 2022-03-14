@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     cv::Mat imageBGR = cv::imread(imageFilepath, cv::ImreadModes::IMREAD_COLOR);
     cv::Mat resizedImageBGR, resizedImageRGB, resizedImage, preprocessedImage;
     cv::resize(imageBGR, resizedImageBGR,
-               cv::Size(inputDims.at(2), inputDims.at(3)),
+               cv::Size(inputDims.at(3), inputDims.at(2)),
                cv::InterpolationFlags::INTER_CUBIC);
     cv::cvtColor(resizedImageBGR, resizedImageRGB,
                  cv::ColorConversionCodes::COLOR_BGR2RGB);
