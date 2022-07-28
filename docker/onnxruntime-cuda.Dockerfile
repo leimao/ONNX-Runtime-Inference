@@ -1,8 +1,8 @@
-FROM nvcr.io/nvidia/cuda:11.4.1-cudnn8-devel-ubuntu20.04
+FROM nvcr.io/nvidia/cuda:11.6.2-cudnn8-devel-ubuntu20.04
 
-ARG OPENCV_VERSION=4.5.3
-ARG ONNXRUNTIME_VERSION=1.8.2
-ARG CMALE_VERSION=3.21.1
+ARG OPENCV_VERSION=4.6.0
+ARG ONNXRUNTIME_VERSION=1.12.0
+ARG CMAKE_VERSION=3.23.2
 ARG NUM_JOBS=8
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -58,8 +58,8 @@ ENV LANGUAGE en_US.UTF-8
 
 # Install CMake
 RUN cd /tmp && \
-    wget https://github.com/Kitware/CMake/releases/download/v${CMALE_VERSION}/cmake-${CMALE_VERSION}-linux-x86_64.sh && \
-    bash cmake-${CMALE_VERSION}-linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
+    wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh && \
+    bash cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/usr/local --exclude-subdir --skip-license
 RUN rm -rf /tmp/*
 
 # Install OpenCV
@@ -113,7 +113,7 @@ RUN cd /tmp && \
 RUN rm -rf /tmp/*
 
 # Install ONNX Runtime
-RUN pip install pytest==6.2.1 onnx==1.10.1
+RUN pip install pytest==6.2.1 onnx==1.12.0
 RUN cd /tmp && \
     git clone --recursive --branch v${ONNXRUNTIME_VERSION} https://github.com/Microsoft/onnxruntime && \
     cd onnxruntime && \

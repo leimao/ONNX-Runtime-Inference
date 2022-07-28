@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
     {
         // Using CUDA backend
         // https://github.com/microsoft/onnxruntime/blob/v1.8.2/include/onnxruntime/core/session/onnxruntime_cxx_api.h#L329
-        OrtCUDAProviderOptions cuda_options{0};
+        OrtCUDAProviderOptions cuda_options{};
         sessionOptions.AppendExecutionProvider_CUDA(cuda_options);
     }
 
