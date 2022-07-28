@@ -131,6 +131,7 @@ std::vector<std::string> readLabels(std::string& labelFilepath)
 
 int main(int argc, char* argv[])
 {
+    const int64_t batchSize = 2;
     bool useCUDA{true};
     const char* useCUDAFlag = "--use_cuda";
     const char* useCPUFlag = "--use_cpu";
@@ -165,7 +166,8 @@ int main(int argc, char* argv[])
     }
 
     std::string instanceName{"image-classification-inference"};
-    std::string modelFilepath{"../../data/models/squeezenet1.1-7.onnx"};
+    // std::string modelFilepath{"../../data/models/squeezenet1.1-7.onnx"};
+    std::string modelFilepath{"../../data/models/resnet18-v1-7.onnx"};
     std::string imageFilepath{
         "../../data/images/european-bee-eater-2115564_1920.jpg"};
     std::string labelFilepath{"../../data/labels/synset.txt"};
@@ -201,31 +203,43 @@ int main(int argc, char* argv[])
     size_t numInputNodes = session.GetInputCount();
     size_t numOutputNodes = session.GetOutputCount();
 
-    std::cout << "Number of Input Nodes: " << numInputNodes << std::endl;
-    std::cout << "Number of Output Nodes: " << numOutputNodes << std::endl;
-
     const char* inputName = session.GetInputName(0, allocator);
-    std::cout << "Input Name: " << inputName << std::endl;
 
     Ort::TypeInfo inputTypeInfo = session.GetInputTypeInfo(0);
     auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
 
     ONNXTensorElementDataType inputType = inputTensorInfo.GetElementType();
-    std::cout << "Input Type: " << inputType << std::endl;
 
     std::vector<int64_t> inputDims = inputTensorInfo.GetShape();
-    std::cout << "Input Dimensions: " << inputDims << std::endl;
+    if (inputDims.at(0) == -1)
+    {
+        std::cout << "Got dynamic batch size. Setting input batch size to "
+                  << batchSize << "." << std::endl;
+        inputDims.at(0) = batchSize;
+    }
 
     const char* outputName = session.GetOutputName(0, allocator);
-    std::cout << "Output Name: " << outputName << std::endl;
 
     Ort::TypeInfo outputTypeInfo = session.GetOutputTypeInfo(0);
     auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
 
     ONNXTensorElementDataType outputType = outputTensorInfo.GetElementType();
-    std::cout << "Output Type: " << outputType << std::endl;
 
     std::vector<int64_t> outputDims = outputTensorInfo.GetShape();
+    if (outputDims.at(0) == -1)
+    {
+        std::cout << "Got dynamic batch size. Setting output batch size to "
+                  << batchSize << "." << std::endl;
+        outputDims.at(0) = batchSize;
+    }
+
+    std::cout << "Number of Input Nodes: " << numInputNodes << std::endl;
+    std::cout << "Number of Output Nodes: " << numOutputNodes << std::endl;
+    std::cout << "Input Name: " << inputName << std::endl;
+    std::cout << "Input Type: " << inputType << std::endl;
+    std::cout << "Input Dimensions: " << inputDims << std::endl;
+    std::cout << "Output Name: " << outputName << std::endl;
+    std::cout << "Output Type: " << outputType << std::endl;
     std::cout << "Output Dimensions: " << outputDims << std::endl;
 
     cv::Mat imageBGR = cv::imread(imageFilepath, cv::ImreadModes::IMREAD_COLOR);
@@ -251,12 +265,17 @@ int main(int argc, char* argv[])
 
     size_t inputTensorSize = vectorProduct(inputDims);
     std::vector<float> inputTensorValues(inputTensorSize);
-    inputTensorValues.assign(preprocessedImage.begin<float>(),
-                             preprocessedImage.end<float>());
+    // Make copies of the same image input.
+    for (int64_t i = 0; i < batchSize; ++i)
+    {
+        std::copy(preprocessedImage.begin<float>(),
+                  preprocessedImage.end<float>(),
+                  inputTensorValues.begin() + i * inputTensorSize / batchSize);
+    }
 
     size_t outputTensorSize = vectorProduct(outputDims);
     assert(("Output tensor size should equal to the label set size.",
-            labels.size() == outputTensorSize));
+            labels.size() * batchSize == outputTensorSize));
     std::vector<float> outputTensorValues(outputTensorSize);
 
     std::vector<const char*> inputNames{inputName};
@@ -274,27 +293,41 @@ int main(int argc, char* argv[])
         outputDims.data(), outputDims.size()));
 
     session.Run(Ort::RunOptions{nullptr}, inputNames.data(),
-                inputTensors.data(), 1, outputNames.data(),
-                outputTensors.data(), 1);
+                inputTensors.data(), 1 /*Number of inputs*/, outputNames.data(),
+                outputTensors.data(), 1 /*Number of outputs*/);
 
-    int predId = 0;
-    float activation = 0;
-    float maxActivation = std::numeric_limits<float>::lowest();
-    float expSum = 0;
-    for (int i = 0; i < labels.size(); i++)
+    std::vector<int> predIds(batchSize, 0);
+    std::vector<std::string> predLabels(batchSize);
+    std::vector<float> confidences(batchSize, 0.0f);
+    for (int64_t b = 0; b < batchSize; ++b)
     {
-        activation = outputTensorValues.at(i);
-        expSum += std::exp(activation);
-        if (activation > maxActivation)
+        float activation = 0;
+        float maxActivation = std::numeric_limits<float>::lowest();
+        float expSum = 0;
+        for (int i = 0; i < labels.size(); i++)
         {
-            predId = i;
-            maxActivation = activation;
+            activation = outputTensorValues.at(i + b * labels.size());
+            expSum += std::exp(activation);
+            if (activation > maxActivation)
+            {
+                predIds.at(b) = i;
+                maxActivation = activation;
+            }
         }
+        predLabels.at(b) = labels.at(predIds.at(b));
+        confidences.at(b) = std::exp(maxActivation) / expSum;
     }
-    std::cout << "Predicted Label ID: " << predId << std::endl;
-    std::cout << "Predicted Label: " << labels.at(predId) << std::endl;
-    std::cout << "Uncalibrated Confidence: " << std::exp(maxActivation) / expSum
-              << std::endl;
+    for (int64_t b = 0; b < batchSize; ++b)
+    {
+        assert(("Output predictions should all be identical.",
+                predIds.at(b) == predIds.at(0)));
+    }
+    // All the predictions should be the same
+    // because the input images are just copies of each other.
+
+    std::cout << "Predicted Label ID: " << predIds.at(0) << std::endl;
+    std::cout << "Predicted Label: " << predLabels.at(0) << std::endl;
+    std::cout << "Uncalibrated Confidence: " << confidences.at(0) << std::endl;
 
     // Measure latency
     int numTests{100};
