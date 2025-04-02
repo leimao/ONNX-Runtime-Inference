@@ -2,36 +2,32 @@
 
 ## Introduction
 
-ONNX Runtime C++ inference example for image classification using CPU and CUDA.
-
-## Dependencies
-
-* CMake 3.20.1
-* ONNX Runtime 1.12.0
-* OpenCV 4.5.2
+ONNX Runtime C++ and Python inference example for image classification using CPU and CUDA.
 
 ## Usages
 
-### Build Docker Image
+### C++ Inference
+
+#### Build Docker Image
 
 ```bash
-$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag=onnxruntime-cuda:1.12.0 .
+$ docker build -f docker/onnxruntime-cuda.Dockerfile --no-cache --tag onnxruntime-cuda:1.21.0 .
 ```
 
-### Run Docker Container
+#### Run Docker Container
 
 ```bash
-$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt onnxruntime-cuda:1.12.0
+$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt -w /mnt onnxruntime-cuda:1.21.0
 ```
 
-### Build Example
+#### Build Example
 
 ```bash
 $ cmake -B build
 $ cmake --build build --config Release --parallel
 ```
 
-### Run Example
+#### Run Example
 
 ```bash
 $ cd build/src/
@@ -69,6 +65,29 @@ Uncalibrated Confidence: 0.996137
 Minimum Inference Latency: 0.98 ms
 ```
 
+### Python Inference
+
+#### Build Docker Image
+
+```bash
+$ docker build -f docker/onnxruntime-cuda-python.Dockerfile --no-cache --tag onnxruntime-cuda-python:1.21.0 .
+```
+
+#### Run Docker Container
+
+```bash
+$ docker run -it --rm --gpus device=0 -v $(pwd):/mnt -w /mnt onnxruntime-cuda-python:1.21.0
+```
+
+#### Run Example
+
+```bash
+$ python python/inference.py
+Predicted Label ID: 92
+Predicted Label: n01828970 bee eater
+```
+
 ## References
 
-* [ONNX Runtime C++ Inference](https://leimao.github.io/blog/ONNX-Runtime-CPP-Inference/)
+- [ONNX Runtime C++ Inference](https://leimao.github.io/blog/ONNX-Runtime-CPP-Inference/)
+- [ONNX Runtime Python Inference](https://leimao.github.io/blog/ONNX-Runtime-Python-Inference/)
