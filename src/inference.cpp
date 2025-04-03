@@ -131,7 +131,7 @@ std::vector<std::string> readLabels(std::string& labelFilepath)
 
 int main(int argc, char* argv[])
 {
-    const int64_t batchSize = 2;
+    int64_t batchSize = 2;
     bool useCUDA{true};
     const char* useCUDAFlag = "--use_cuda";
     const char* useCPUFlag = "--use_cpu";
@@ -166,11 +166,11 @@ int main(int argc, char* argv[])
     }
 
     std::string instanceName{"image-classification-inference"};
-    // std::string modelFilepath{"../../data/models/squeezenet1.1-7.onnx"};
-    std::string modelFilepath{"../../data/models/resnet18-v1-7.onnx"};
+    std::string modelFilepath{"data/models/squeezenet1_1_Opset18.onnx"};
+    // std::string modelFilepath{"data/models/resnet18_Opset18.onnx"};
     std::string imageFilepath{
-        "../../data/images/european-bee-eater-2115564_1920.jpg"};
-    std::string labelFilepath{"../../data/labels/synset.txt"};
+        "data/images/european-bee-eater-2115564_1920.jpg"};
+    std::string labelFilepath{"data/labels/synset.txt"};
 
     std::vector<std::string> labels{readLabels(labelFilepath)};
 
@@ -203,7 +203,8 @@ int main(int argc, char* argv[])
     size_t numInputNodes = session.GetInputCount();
     size_t numOutputNodes = session.GetOutputCount();
 
-    const char* inputName = session.GetInputName(0, allocator);
+    Ort::AllocatedStringPtr inputNamePtr = session.GetInputNameAllocated(0, allocator);
+    const char* inputName = inputNamePtr.get();
 
     Ort::TypeInfo inputTypeInfo = session.GetInputTypeInfo(0);
     auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
@@ -217,8 +218,13 @@ int main(int argc, char* argv[])
                   << batchSize << "." << std::endl;
         inputDims.at(0) = batchSize;
     }
+    else
+    {
+        batchSize = inputDims.at(0);
+    }
 
-    const char* outputName = session.GetOutputName(0, allocator);
+    Ort::AllocatedStringPtr outputNamePtr = session.GetOutputNameAllocated(0, allocator);
+    const char* outputName = outputNamePtr.get();
 
     Ort::TypeInfo outputTypeInfo = session.GetOutputTypeInfo(0);
     auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();

@@ -30,8 +30,7 @@ $ cmake --build build --config Release --parallel
 #### Run Example
 
 ```bash
-$ cd build/src/
-$ ./inference  --use_cpu
+$ build/src/inference --use_cpu
 Inference Execution Provider: CPU
 Number of Input Nodes: 1
 Number of Output Nodes: 1
@@ -48,8 +47,7 @@ Minimum Inference Latency: 7.45 ms
 ```
 
 ```bash
-$ cd build/src/
-$ ./inference  --use_cuda
+$ build/src/inference --use_cuda
 Inference Execution Provider: CUDA
 Number of Input Nodes: 1
 Number of Output Nodes: 1

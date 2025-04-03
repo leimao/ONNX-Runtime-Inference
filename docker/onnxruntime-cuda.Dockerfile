@@ -3,9 +3,8 @@ FROM nvcr.io/nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
 ARG ONNX_VERSION=1.17.0
 ARG ONNXRUNTIME_VERSION=1.21.0
 ARG OPENCV_VERSION=4.11.0
-# ARG CMAKE_VERSION=4.0.0
-ARG CMAKE_VERSION=3.31.0
-ARG NUM_JOBS=4
+ARG CMAKE_VERSION=4.0.0
+ARG NUM_JOBS=16
 
 ARG PYTHON_VENV_PATH="/python/venv"
 
@@ -123,4 +122,3 @@ RUN cd /tmp && \
     make install && \
     # pip install dist/* && \
     rm -rf /tmp/*
-
