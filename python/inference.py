@@ -45,15 +45,15 @@ def read_test_data(tensor_proto_file_path: str) -> np.ndarray:
 
 if __name__ == "__main__":
 
-    onnx_model_file_path = "../data/models/resnet18-v1-7.onnx"
-    test_input_file_path = "../data/test_data/resnet18-v1-7/test_data_set_0/input_0.pb"
-    test_output_file_path = "../data/test_data/resnet18-v1-7/test_data_set_0/output_0.pb"
-    image_file_path = "../data/images/european-bee-eater-2115564_1920.jpg"
-    label_file_path = "../data/labels/synset.txt"
+    onnx_model_file_path = "data/models/resnet18-v1-7.onnx"
+    test_input_file_path = "data/test_data/resnet18-v1-7/test_data_set_0/input_0.pb"
+    test_output_file_path = "data/test_data/resnet18-v1-7/test_data_set_0/output_0.pb"
+    image_file_path = "data/images/european-bee-eater-2115564_1920.jpg"
+    label_file_path = "data/labels/synset.txt"
 
     model_proto = onnx.load(onnx_model_file_path)
     onnx.checker.check_model(model_proto)
-    model_proto_bytes = onnx._serialize(model_proto)
+    model_proto_bytes = model_proto.SerializeToString()
     # Create ONNX Runtime inference session.
     # https://onnxruntime.ai/docs/get-started/with-python.html
     ort_sess = ort.InferenceSession(
