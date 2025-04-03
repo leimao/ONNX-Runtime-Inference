@@ -166,8 +166,8 @@ int main(int argc, char* argv[])
     }
 
     std::string instanceName{"image-classification-inference"};
-    std::string modelFilepath{"data/models/squeezenet1_1_Opset18.onnx"};
-    // std::string modelFilepath{"data/models/resnet18_Opset18.onnx"};
+    std::string modelFilepath{"data/models/squeezenet1.1-7.onnx"};
+    // std::string modelFilepath{"data/models/resnet18-v1-7.onnx"};
     std::string imageFilepath{
         "data/images/european-bee-eater-2115564_1920.jpg"};
     std::string labelFilepath{"data/labels/synset.txt"};
